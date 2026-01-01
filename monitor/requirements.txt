@@ -1,0 +1,4 @@
+apscheduler==3.10.4
+requests==2.31.0
+feedparser==6.0.10
+playwright==1.45.0

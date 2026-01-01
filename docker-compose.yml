@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13
+    container_name: ti_watchlist_db
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=dbname
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ti_watchlist_network
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    container_name: ti_watchlist_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/data:/app/data
+      - ./backend/alembic:/app/alembic
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/dbname
+      - VIRUSTOTAL_API_KEY=${VIRUSTOTAL_API_KEY}
+      - MALWAREBAZAAR_API_KEY=${MALWAREBAZAAR_API_KEY}
+      - URLSCAN_API_KEY=${URLSCAN_API_KEY}
+      - NEIKI_API_KEY=${NEIKI_API_KEY}
+    depends_on:
+      - db
+    command: sh -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - ti_watchlist_network
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: ti_watchlist_frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - API_BASE_URL=http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - ti_watchlist_network
+    restart: unless-stopped
+
+  monitor:
+    build: ./monitor
+    container_name: ti_watchlist_monitor
+    environment:
+      - API_BASE_URL=http://backend:8000
+      - VIRUSTOTAL_API_KEY=${VIRUSTOTAL_API_KEY}
+      - MALWAREBAZAAR_API_KEY=${MALWAREBAZAAR_API_KEY}
+      - URLSCAN_API_KEY=${URLSCAN_API_KEY}
+      - NEIKI_API_KEY=${NEIKI_API_KEY}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - ti_watchlist_network
+    restart: unless-stopped
+
+networks:
+  ti_watchlist_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
