@@ -75,6 +75,7 @@ graph TD
 1. **Clone the Repository**
 ```bash
 git clone [https://github.com/vaibhavspandey/ThreatIntel-Pinboard.git](https://github.com/vaibhavspandey/ThreatIntel-Pinboard.git)
+
 cd ThreatIntel-Pinboard
 
 ```
