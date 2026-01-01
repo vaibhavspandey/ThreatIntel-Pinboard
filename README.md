@@ -113,6 +113,7 @@ MALWAREBAZAAR_API_KEY=your_mb_api_key
 docker-compose up --build -d
 
 ```
+###### or you can also use ./openpinboard
 
 
 4. **Access the Application**
