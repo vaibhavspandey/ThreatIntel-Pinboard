@@ -148,6 +148,19 @@ TIPinBoard works out-of-the-box, but you can customize the monitoring behavior b
 
 
 ---
+## ❓ Troubleshooting & FAQ
+
+**Q: I am seeing `429 Too Many Requests` errors in the logs.**
+**A:** This means you have hit the rate limit of your External API keys (e.g., VirusTotal Free Tier allows only 4 requests/minute).
+* **Fix:** TIPinBoard's scheduler attempts to handle this automatically, but if you pin hundreds of IOCs on a free key, you will see these errors. The system will retry them in the next cycle.
+
+**Q: The Dashboard isn't loading (Connection Refused).**
+**A:** Ensure all Docker containers are running healthy.
+* Run `docker-compose ps` to check status.
+* If the `frontend` container exits immediately, check if it can reach the `backend` service name in your Docker network.
+
+**Q: How do I backup my data?**
+**A:** All data is stored in the PostgreSQL volume. You can backup the `ti_watchlist_data` Docker volume to save your campaign history.
 
 ## 🤝 Contributing
 
@@ -161,13 +174,12 @@ Contributions are welcome! This tool is designed to be community-driven.
 4. **Push** to the branch.
 5. Open a **Pull Request**.
 
-### Planned Roadmap
-
+### Planned 🔮 Roadmap
+* [ ] **Screenshots:** Add high-quality screenshots of the "Delta Feed" and "Pin Creation" flows to the README.
 * [ ] **LLM Integration:** Integration of local LLMs to generate semantic summaries of complex JSON differences.
 * [ ] **TIP Integration:** Native connectors for MISP and OpenCTI to support automated export of confirmed alerts.
 * [ ] **Notification Webhooks:** Support for Slack/Microsoft Teams webhooks for real-time alerting.
-
----
+* [ ] **Other Ideas Welcome** I'd love your Ideas on where this can go!
 
 ## 🛡️ License
 
