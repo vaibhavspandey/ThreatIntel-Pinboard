@@ -3,7 +3,4 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-# Add these to your .gitignore if they aren't already there
-echo "__pycache__/" >> .gitignore
-echo "*.pyc" >> .gitignore
-echo "backend/data/" >> .gitignore
+backend/data/
