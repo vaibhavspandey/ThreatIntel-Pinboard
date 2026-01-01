@@ -10,6 +10,17 @@
 The system addresses the "stale intelligence" problem by establishing a temporal baseline for monitored assets and algorithmically detecting significant deviations (Deltas)—such as changes in detection ratios, DNS resolutions, or WHOIS data—thereby reducing alert fatigue and focusing analyst attention on evolutionary threats.
 
 ---
+**TIPinBoard** turns your static Indicators of Compromise (IOCs) into active intelligence traps.
+
+### The "Bingo" Moment
+Imagine this: You are investigating a suspicious domain. It currently resolves to a parking page and shows "Clean" on VirusTotal. Most analysts would archive it and move on.
+
+You pin it to **TIPinBoard**. Two days later, you get a notification: **Delta Alert**.
+> *Domain resolution changed from `0.0.0.0` to `45.x.x.x`.*
+
+**Bingo.** You just caught a Command & Control (C2) server "waking up" in real-time, long before it appears on public blocklists. TIPinBoard automates this longitudinal tracking, shifting the paradigm from passive looking to active hunting.
+
+---
 
 ## 🚀 Key Value Proposition
 
