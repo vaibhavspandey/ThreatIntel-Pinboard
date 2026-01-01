@@ -12,7 +12,7 @@ The system addresses the "stale intelligence" problem by establishing a temporal
 ---
 **TIPinBoard** turns your static Indicators of Compromise (IOCs) into active intelligence traps.
 
-### The "Bingo" Moment
+# The "Bingo" Moment
 Imagine this: You are investigating a suspicious domain. It currently resolves to a parking page and shows "Clean" on VirusTotal. Most analysts would archive it and move on.
 
 You pin it to **TIPinBoard**. Two days later, you get a notification: **Delta Alert**.
