@@ -181,7 +181,30 @@ Contributions are welcome! This tool is designed to be community-driven.
 * [ ] **TIP Integration:** Native connectors for MISP and OpenCTI to support automated export of confirmed alerts.
 * [ ] **Notification Webhooks:** Support for Slack/Microsoft Teams webhooks for real-time alerting.
 * [ ] **Other Ideas Welcome** I'd love your Ideas on where this can go!
-
+```
+The following features are planned to enhance TIPinBoard’s analytic depth and operational efficiency. These updates focus on providing clearer telemetry for analysts and more robust handling of large-scale IOC monitoring.
+1. Advanced Threat Timelines (Competitive Analytics)
+Objective: Implement a graphical "Race to Detection" view to visualize platform parity and lead times.
+Feature Detail: A new top-level sidebar view utilizing Plotly/Altair to map the detection lifecycle of an IOC across multiple providers (VirusTotal, MalwareBazaar, urlscan.io, and Neiki TIP)
+Analytic Value: Specifically identifies which platform flagged a threat first, providing metadata on the "Competitive Element" of vendor detection speed.
+Granularity: Hourly event tracking with explicit status labels (e.g., "Benign" vs. "Malicious").
+2. Enhanced Orchestration & Rate-Limit Spreading
+Objective: Optimize API consumption for high-volume IOC watchlists.
+Feature Detail: Transition from "Burst Polling" to "Load-Balanced Polling." Instead of scanning all IOCs at the start of the hour, the system will implement a temporal distribution algorithm to spread requests evenly across the 60-minute window.
+Observability: Integration of a "Last Scanned" telemetry field next to each Pin in the UI to provide analysts with immediate verification of intelligence freshness.
+3. Intelligence Fidelity & Cross-Platform Correlation
+Objective: Harmonize disparate data sources for a unified threat view.
+Feature Detail: Expansion of the Delta Engine to correlate "Quiet" signals. For example, flagging a "Benign" status on VirusTotal that occurs simultaneously with a "Malicious" verdict on urlscan.io, highlighting potential detection gaps in major repositories.
+Community Contribution: Continued expansion of the connectors.py service to support additional open-source and commercial intelligence feeds.
+4. Enterprise-Grade UX & Input Sanitization
+Objective: Harden the system against malformed data and improve operational flow.
+UI/UX Synchronicity: Implementation of asynchronous spinners and automatic cache invalidation (st.cache_data.clear()) to ensure the dashboard reflects the database state immediately after a new Board or Pin is created.
+Robust Input Schema: A dedicated validation layer to sanitize and normalize inputs (Hashes, IPs, Domains, and URLs) before they reach the monitoring pipeline, preventing injection and ensuring API compatibility.
+State Management: Improving form handling to ensure input fields automatically reset upon successful submission without requiring a manual page refresh.
+🛠 Questions for the Community / Contributors:
+Schema Extension: Would you prefer the "Last Scanned" timestamp to be stored in the Pins table or derived dynamically from the latest Snapshot?
+Timeline Visualization: For the "Threat Timelines" view, should we prioritize a "Gantt-style" lead-time chart or a standard time-series line graph?
+Webhook Support: Should we prioritize Discord/Slack webhooks as part of the "Competitive Alerting" logic?
 ## 🛡️ License
 
 This project is licensed under the MIT License - see the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
