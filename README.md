@@ -45,6 +45,8 @@ TIPinBoard utilizes a decoupled microservices architecture containerized via Doc
 * **Monitor Service:** A standalone Python worker utilizing `APScheduler` for asynchronous API polling and Delta calculation.
 
 ### System Data Flow
+
+```mermaid
 graph TD
     User((Analyst)) -->|1. Pin IOC| UI[Streamlit Frontend]
     UI -->|2. POST /pin| API[FastAPI Backend]
@@ -60,7 +62,7 @@ graph TD
     Alert --> DB
     
     User -->|8. View Feed| UI
-
+```
 ## ⚡ Getting Started
 
 ### Prerequisites
