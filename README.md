@@ -1,6 +1,3 @@
-Here is the corrected, strictly formatted `README.md` file content.
-
-```markdown
 # TIPinBoard: Automated Workbench for Threat Intelligence
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
