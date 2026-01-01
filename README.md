@@ -122,6 +122,19 @@ docker-compose up --build -d
 
 
 ---
+## ⚙️ Configuration
+
+TIPinBoard works out-of-the-box, but you can customize the monitoring behavior by adding these optional variables to your `.env` file.
+
+| Variable | Description | Default | Required |
+| :--- | :--- | :--- | :--- |
+| `VIRUSTOTAL_API_KEY` | Your VirusTotal API v3 Key. | - | **Yes** |
+| `MALWAREBAZAAR_API_KEY` | Your MalwareBazaar API Key. | - | No |
+| `POLL_INTERVAL_MINUTES` | How often the monitor checks active pins (in mins). | `60` | No |
+| `POSTGRES_USER` | Database username. | `user` | No |
+| `POSTGRES_PASSWORD` | Database password. | `password` | No |
+| `POSTGRES_DB` | Database name. | `ti_watchlist` | No |
+| `LOG_LEVEL` | Logging verbosity (DEBUG, INFO, ERROR). | `INFO` | No |
 
 ## 📖 Usage Workflow
 
