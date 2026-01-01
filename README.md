@@ -205,6 +205,7 @@ State Management: Improving form handling to ensure input fields automatically r
 Schema Extension: Would you prefer the "Last Scanned" timestamp to be stored in the Pins table or derived dynamically from the latest Snapshot?
 Timeline Visualization: For the "Threat Timelines" view, should we prioritize a "Gantt-style" lead-time chart or a standard time-series line graph?
 Webhook Support: Should we prioritize Discord/Slack webhooks as part of the "Competitive Alerting" logic?
+```
 ## 🛡️ License
 
 This project is licensed under the MIT License - see the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
