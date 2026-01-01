@@ -60,7 +60,6 @@ graph TD
     Alert --> DB
     
     User -->|8. View Feed| UI
----
 
 ## ⚡ Getting Started
 
