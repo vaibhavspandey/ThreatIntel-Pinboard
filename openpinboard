@@ -1,0 +1,5 @@
+#!/bin/bash
+cd madefromcursor
+echo "Starting the services..."
+docker compose up -d
+echo "Pinboard is available at http://localhost:8501"
