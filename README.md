@@ -206,6 +206,30 @@ Schema Extension: Would you prefer the "Last Scanned" timestamp to be stored in 
 Timeline Visualization: For the "Threat Timelines" view, should we prioritize a "Gantt-style" lead-time chart or a standard time-series line graph?
 Webhook Support: Should we prioritize Discord/Slack webhooks as part of the "Competitive Alerting" logic?
 ```
+
+## 📸 Screenshots
+
+<p align="center">
+  <img src="Screenshot from 2026-01-03 17-12-13.png" width="800" alt="Dashboard View">
+  <br>
+  <em>Dashboard View</em>
+</p>
+
+<p align="center">
+  <img src="Screenshot from 2026-01-03 17-12-32.png" width="800" alt="Live Monitoring">
+  <br>
+  <em>Live Monitoring</em>
+</p>
+
+<p align="center">
+  <img src="Screenshot from 2026-01-03 17-13-09.png" width="800" alt="Alert History">
+  <br>
+  <em>Alert History</em>
+</p>
+
+
+
+```
 ## 🛡️ License
 
 This project is licensed under the MIT License - see the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
