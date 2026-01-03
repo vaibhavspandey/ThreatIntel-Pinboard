@@ -346,12 +346,14 @@ def _test_neiki_api() -> bool:
         return False
     
     try:
-        url = "https://api.neiki.dev/v1/enrich"
-        headers = {"Authorization": f"Bearer {api_key}"}
-        data = {"ioc_type": "ip", "ioc_value": "8.8.8.8"}
-        response = requests.post(url, headers=headers, json=data, timeout=10)
+        # Test with a known hash (empty file) using the new V2 API to ensure JSON response
+        url = "https://tip.neiki.dev/api/reports/file/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        headers = {"Authorization": api_key, "Content-Type": "application/json"}
+        response = requests.get(url, headers=headers, timeout=10)
         
-        if response.status_code == 200:
+        # 200 = found, 404 = not found (but still connected)
+        # We also check for application/json to avoid "fake" successes from HTML pages
+        if response.status_code in [200, 404] and "application/json" in response.headers.get("Content-Type", ""):
             print("DEBUG: Neiki API connection successful")
             return True
         else:

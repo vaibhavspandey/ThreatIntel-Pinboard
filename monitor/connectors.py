@@ -212,14 +212,8 @@ def _get_urlscan_report(ioc_value: str, ioc_type: str) -> Optional[Dict[str, Any
 
 def _get_neiki_report(ioc_value: str, ioc_type: str) -> Optional[Dict[str, Any]]:
     """
-    Get Neiki TIP report for an IOC.
-    
-    Args:
-        ioc_value: The IOC value
-        ioc_type: Type of IOC ("ip", "domain", "hash")
-    
-    Returns:
-        Full JSON response or None on failure
+    Queries Neiki TIP V2 API.
+    Ref: https://neikidev.github.io/tip-v2/api-docs-v1.html
     """
     api_key = os.getenv("NEIKI_API_KEY")
     if not api_key:
@@ -227,19 +221,33 @@ def _get_neiki_report(ioc_value: str, ioc_type: str) -> Optional[Dict[str, Any]]
     
     _rate_limit("neiki")
     
-    url = "https://api.neiki.dev/v1/enrich"
-    headers = {"Authorization": f"Bearer {api_key}"}
-    data = {"ioc_type": ioc_type, "ioc_value": ioc_value}
+    # Correct Host from Docs: tip.neiki.dev
+    base_url = "https://tip.neiki.dev/api"
+    # Correct Header from Docs: 'Authorization: apikey' (No Bearer prefix)
+    headers = {"Authorization": api_key, "Content-Type": "application/json"}
+    
+    # Map IOC types to V2 endpoints
+    if ioc_type == "hash":
+        endpoint = f"/reports/file/{ioc_value}"
+    elif ioc_type == "ip":
+        endpoint = f"/reports/ip/{ioc_value}"
+    elif ioc_type == "domain":
+        endpoint = f"/reports/domain/{ioc_value}"
+    else:
+        return None
     
     try:
-        response = requests.post(url, headers=headers, json=data, timeout=30)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.HTTPError as e:
-        print(f"Neiki API error: {e.response.status_code} - {e.response.text}", flush=True)
-        return None
-    except requests.exceptions.RequestException as e:
-        print(f"Neiki request error: {str(e)}", flush=True)
+        response = requests.get(f"{base_url}{endpoint}", headers=headers, timeout=30)
+        if response.status_code == 200:
+            return response.json()
+        elif response.status_code == 404:
+            # Not found is a valid response (clean/unknown), not an error
+            return None
+        else:
+            print(f"Neiki HTTP {response.status_code}", flush=True)
+            return None
+    except Exception as e:
+        print(f"Neiki Connection Error: {e}", flush=True)
         return None
 
 
