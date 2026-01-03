@@ -229,17 +229,13 @@ Webhook Support: Should we prioritize Discord/Slack webhooks as part of the "Com
 </p>
 
 
-```
+
 ## 🛡️ License
 
 This project is licensed under the MIT License - see the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
-
----
 
 ## 📧 Contact
 
 **Vaibhav Pandey** Project Link: [https://github.com/vaibhavspandey/ThreatIntel-Pinboard](https://github.com/vaibhavspandey/ThreatIntel-Pinboard)
 
-```
 
-```
