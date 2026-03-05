@@ -1,5 +1,8 @@
 #!/bin/bash
-cd madefromcursor
 echo "Starting the services..."
 docker compose up -d
+
+# Wait for backend and print API health report
+python3 check_apis.py
+
 echo "Pinboard is available at http://localhost:8501"

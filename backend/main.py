@@ -241,47 +241,37 @@ async def create_alert(alert: AlertCreate, db: Session = Depends(get_db)):
 
 # ============ API STATUS ENDPOINT ============
 
-def _test_virustotal_api() -> bool:
+def _test_virustotal_api() -> Dict[str, Any]:
     """Test VirusTotal API connection"""
     api_key = os.getenv("VIRUSTOTAL_API_KEY")
     if not api_key:
-        print("DEBUG: VIRUSTOTAL_API_KEY not found in environment")
-        return False
+        return {"connected": False, "message": "Missing VIRUSTOTAL_API_KEY in environment"}
     
     try:
-        # Test with a simple API call (user info endpoint)
         url = "https://www.virustotal.com/api/v3/users/me"
         headers = {"x-apikey": api_key}
         response = requests.get(url, headers=headers, timeout=10)
         
         if response.status_code == 200:
-            print("DEBUG: VirusTotal API connection successful")
-            return True
+            return {"connected": True, "message": "Successfully connected"}
+        elif response.status_code == 401:
+            return {"connected": False, "message": "Unauthorized: Invalid API Key"}
         else:
-            print(f"DEBUG: VirusTotal API returned status {response.status_code}")
-            print(f"DEBUG: Response: {response.text[:200]}")
-            return False
+            return {"connected": False, "message": f"API Error: HTTP {response.status_code}"}
     except requests.exceptions.Timeout:
-        print("DEBUG: VirusTotal API request timed out")
-        return False
-    except requests.exceptions.ConnectionError as e:
-        print(f"DEBUG: VirusTotal API connection error: {str(e)}")
-        return False
+        return {"connected": False, "message": "Connection timeout"}
     except requests.exceptions.RequestException as e:
-        print(f"DEBUG: VirusTotal API request error: {str(e)}")
-        return False
+        return {"connected": False, "message": f"Request failed: {str(e)}"}
     except Exception as e:
-        print(f"DEBUG: VirusTotal API unexpected error: {str(e)}")
-        return False
+        return {"connected": False, "message": f"Unexpected error: {str(e)}"}
 
 
-def _test_malwarebazaar_api() -> bool:
+def _test_malwarebazaar_api() -> Dict[str, Any]:
     """Test MalwareBazaar API connection"""
     api_key = os.getenv("MALWAREBAZAAR_API_KEY")
     
     try:
         url = "https://mb-api.abuse.ch/api/v1/"
-        # Use a simpler test query that should work
         data = {"query": "get_recent", "selector": "time"}
         headers = {}
         if api_key:
@@ -289,33 +279,25 @@ def _test_malwarebazaar_api() -> bool:
         
         response = requests.post(url, data=data, headers=headers, timeout=10)
         
-        # 200 = success, 400 = API is reachable but query might be invalid, 401 = Unauthorized but reachable
-        if response.status_code in [200, 400, 401]:
-            print("DEBUG: MalwareBazaar API connection successful")
-            return True
+        if response.status_code in [200, 400]:
+            return {"connected": True, "message": "Successfully connected"}
+        elif response.status_code == 401:
+            return {"connected": False, "message": "Unauthorized: Invalid API Key"}
         else:
-            print(f"DEBUG: MalwareBazaar API returned status {response.status_code}")
-            print(f"DEBUG: Response: {response.text[:200]}")
-            return False
+            return {"connected": False, "message": f"API Error: HTTP {response.status_code}"}
     except requests.exceptions.Timeout:
-        print("DEBUG: MalwareBazaar API request timed out")
-        return False
-    except requests.exceptions.ConnectionError as e:
-        print(f"DEBUG: MalwareBazaar API connection error: {str(e)}")
-        return False
+        return {"connected": False, "message": "Connection timeout"}
     except requests.exceptions.RequestException as e:
-        print(f"DEBUG: MalwareBazaar API request error: {str(e)}")
-        return False
+        return {"connected": False, "message": f"Request failed: {str(e)}"}
     except Exception as e:
-        print(f"DEBUG: MalwareBazaar API unexpected error: {str(e)}")
-        return False
+        return {"connected": False, "message": f"Unexpected error: {str(e)}"}
 
 
-def _test_urlscan_api() -> bool:
+def _test_urlscan_api() -> Dict[str, Any]:
     """Test urlscan.io API connection"""
     api_key = os.getenv("URLSCAN_API_KEY")
     if not api_key:
-        return False
+        return {"connected": False, "message": "Missing URLSCAN_API_KEY in environment"}
     
     try:
         url = "https://urlscan.io/api/v1/search/"
@@ -323,92 +305,99 @@ def _test_urlscan_api() -> bool:
         headers = {"API-Key": api_key}
         response = requests.get(url, params=params, headers=headers, timeout=10)
         
-        # 200 = success, 429 = rate limited (still connected)
-        if response.status_code in [200, 429]:
-            print("DEBUG: urlscan.io API connection successful")
-            return True
+        if response.status_code == 200:
+            return {"connected": True, "message": "Successfully connected"}
+        elif response.status_code == 401:
+            return {"connected": False, "message": "Unauthorized: Invalid API Key"}
+        elif response.status_code == 429:
+            return {"connected": True, "message": "Successfully connected (Rate Limited)"}
         else:
-            print(f"DEBUG: urlscan.io API returned status {response.status_code}")
-            print(f"DEBUG: Response: {response.text[:200]}")
-            return False
+            return {"connected": False, "message": f"API Error: HTTP {response.status_code}"}
+    except requests.exceptions.Timeout:
+        return {"connected": False, "message": "Connection timeout"}
     except requests.exceptions.RequestException as e:
-        print(f"DEBUG: urlscan.io API request error: {str(e)}")
-        return False
+        return {"connected": False, "message": f"Request failed: {str(e)}"}
     except Exception as e:
-        print(f"DEBUG: urlscan.io API unexpected error: {str(e)}")
-        return False
+        return {"connected": False, "message": f"Unexpected error: {str(e)}"}
 
 
-def _test_neiki_api() -> bool:
+def _test_neiki_api() -> Dict[str, Any]:
     """Test Neiki TIP API connection"""
     api_key = os.getenv("NEIKI_API_KEY")
     if not api_key:
-        return False
+        return {"connected": False, "message": "Missing NEIKI_API_KEY in environment"}
     
     try:
-        # Test with a known hash (empty file) using the new V2 API to ensure JSON response
         url = "https://tip.neiki.dev/api/reports/file/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         headers = {"Authorization": api_key, "Content-Type": "application/json"}
         response = requests.get(url, headers=headers, timeout=10)
         
-        # 200 = found, 404 = not found (but still connected)
-        # We also check for application/json to avoid "fake" successes from HTML pages
-        if response.status_code in [200, 404] and "application/json" in response.headers.get("Content-Type", ""):
-            print("DEBUG: Neiki API connection successful")
-            return True
-        else:
-            print(f"DEBUG: Neiki API returned status {response.status_code}")
-            print(f"DEBUG: Response: {response.text[:200]}")
-            return False
-    except requests.exceptions.RequestException as e:
-        print(f"DEBUG: Neiki API request error: {str(e)}")
-        return False
-    except Exception as e:
-        print(f"DEBUG: Neiki API unexpected error: {str(e)}")
-        return False
+        is_json = "application/json" in response.headers.get("Content-Type", "")
 
+        if response.status_code in [200, 404] and is_json:
+            return {"connected": True, "message": "Successfully connected"}
+        elif response.status_code in [401, 403]:
+            return {"connected": False, "message": "Unauthorized: Invalid API Key"}
+        else:
+            return {"connected": False, "message": f"API Error: HTTP {response.status_code}"}
+    except requests.exceptions.Timeout:
+        return {"connected": False, "message": "Connection timeout"}
+    except requests.exceptions.RequestException as e:
+        return {"connected": False, "message": f"Request failed: {str(e)}"}
+    except Exception as e:
+        return {"connected": False, "message": f"Unexpected error: {str(e)}"}
+
+
+# Cache for API status
+_api_status_cache = {}
+_API_STATUS_CACHE_TTL = timedelta(minutes=10)
 
 @app.get("/api/status")
-async def get_api_status():
+async def get_api_status(force: bool = False):
     """
-    Get API connectivity status for VirusTotal and MalwareBazaar.
+    Get API connectivity status for VirusTotal, MalwareBazaar, urlscan.io, and Neiki.
+    Results are cached for 10 minutes to prevent rate limiting. Use force=true to bypass cache.
     """
+    global _api_status_cache
     now = datetime.now(timezone.utc)
     
-    # Need to check APIs
-    print("DEBUG: Checking API status...")
-    vt_connected = _test_virustotal_api()
-    mb_connected = _test_malwarebazaar_api()
-    us_connected = _test_urlscan_api()
-    neiki_connected = _test_neiki_api()
+    # Check if we have valid cached data
+    if not force and _api_status_cache:
+        last_checked = _api_status_cache.get("_last_checked")
+        if last_checked and (now - last_checked) < _API_STATUS_CACHE_TTL:
+            return {k: v for k, v in _api_status_cache.items() if k != "_last_checked"}
+
+    print("DEBUG: Performing live check of API status...")
+
+    vt_status = _test_virustotal_api()
+    mb_status = _test_malwarebazaar_api()
+    us_status = _test_urlscan_api()
+    neiki_status = _test_neiki_api()
     
     status = {
         "virustotal": {
-            "connected": vt_connected,
+            **vt_status,
             "last_checked": now.isoformat()
         },
         "malwarebazaar": {
-            "connected": mb_connected,
+            **mb_status,
             "last_checked": now.isoformat()
         },
         "urlscan": {
-            "connected": us_connected,
+            **us_status,
             "last_checked": now.isoformat()
         },
         "neiki": {
-            "connected": neiki_connected,
+            **neiki_status,
             "last_checked": now.isoformat()
         }
     }
     
+    # Update cache
+    _api_status_cache = status.copy()
+    _api_status_cache["_last_checked"] = now
+
     return status
-
-
-@app.get("/api/test-neiki")
-async def test_neiki():
-    """Temporary endpoint for debugging Neiki API"""
-    connected = _test_neiki_api()
-    return {"neiki_connected": connected}
 
 
 @app.get("/")
