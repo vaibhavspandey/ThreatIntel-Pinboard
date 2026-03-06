@@ -36,54 +36,40 @@ try:
                 status_data = status_response.json()
                 
                 st.markdown("---")
-                st.subheader("🔌 API Status")
+                st.subheader("🔌 API Health & Status")
                 
-                # VirusTotal Status
-                vt_status = status_data.get("virustotal", {})
-                vt_connected = vt_status.get("connected", False)
+                # Helper function to render detailed status
+                def render_api_status(name, data):
+                    connected = data.get("connected", False)
+                    message = data.get("message", "Unknown error")
+
+                    if connected:
+                        st.success(f"**{name}**: ✅ Connected")
+                        if "Rate Limited" in message:
+                            st.warning(f"⚠️ {message}")
+                    else:
+                        st.error(f"**{name}**: ❌ Disconnected")
+                        st.caption(f"Reason: {message}")
                 
-                if vt_connected:
-                    st.success("✅ VirusTotal: Connected")
-                else:
-                    st.error("❌ VirusTotal: Disconnected")
-                
+                render_api_status("VirusTotal", status_data.get("virustotal", {}))
                 st.markdown("")
                 
-                # MalwareBazaar Status
-                mb_status = status_data.get("malwarebazaar", {})
-                mb_connected = mb_status.get("connected", False)
-                
-                if mb_connected:
-                    st.success("✅ MalwareBazaar: Connected")
-                else:
-                    st.error("❌ MalwareBazaar: Disconnected")
-                
+                render_api_status("MalwareBazaar", status_data.get("malwarebazaar", {}))
                 st.markdown("")
 
-                # urlscan.io Status
-                us_status = status_data.get("urlscan", {})
-                us_connected = us_status.get("connected", False)
-                
-                if us_connected:
-                    st.success("✅ urlscan.io: Connected")
-                else:
-                    st.error("❌ urlscan.io: Disconnected")
-
+                render_api_status("urlscan.io", status_data.get("urlscan", {}))
                 st.markdown("")
 
-                # Neiki TIP Status
-                neiki_status = status_data.get("neiki", {})
-                neiki_connected = neiki_status.get("connected", False)
+                render_api_status("Neiki TIP", status_data.get("neiki", {}))
                 
-                if neiki_connected:
-                    st.success("✅ Neiki TIP: Connected")
-                else:
-                    st.error("❌ Neiki TIP: Disconnected")
+                if st.button("🔄 Force Check API Status", use_container_width=True):
+                    requests.get(f"{API_BASE_URL}/api/status?force=true", timeout=15)
+                    st.rerun()
 
                 st.markdown("---")
         except requests.exceptions.RequestException:
             st.markdown("---")
-            st.warning("⚠️ Unable to check API status")
+            st.warning("⚠️ Unable to check API status. Backend might be down.")
             st.markdown("---")
         
         # View selector
