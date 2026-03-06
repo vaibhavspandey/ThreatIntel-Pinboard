@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Page config
 st.set_page_config(page_title="TI Pinboard", page_icon="📌", layout="wide")
@@ -98,9 +98,18 @@ try:
     # Create a board_id to board_name map
     board_name_map = {board['id']: board['name'] for board in boards}
 
+    # Track recent urlscan activity per pin
+    urlscan_activity_map = {}
+    for alert in alerts:
+        if alert['delta_data'].get('field') == 'new_urlscan_scan':
+            pin_id = alert['pin']['id']
+            alert_time = datetime.fromisoformat(alert['timestamp'].replace('Z', '+00:00'))
+            if pin_id not in urlscan_activity_map or alert_time > urlscan_activity_map[pin_id]:
+                urlscan_activity_map[pin_id] = alert_time
+
     # Separate comment alerts from main alerts
     comment_alerts = [alert for alert in alerts if alert['delta_data'].get('field') == 'new_vt_comment']
-    main_alerts = [alert for alert in alerts if alert['delta_data'].get('field') != 'new_vt_comment']
+    main_alerts = [alert for alert in alerts if alert['delta_data'].get('field') not in ('new_vt_comment', 'new_urlscan_scan')]
     
     # Main content
     if view == "While you were away":
@@ -197,9 +206,23 @@ try:
                                 st.error("Failed to delete board.")
 
                     if board['pins']:
-                        for pin in board['pins']:
+                        min_date = datetime.min.replace(tzinfo=timezone.utc)
+                        # Sort pins: pins with most recent urlscan activity come first
+                        sorted_pins = sorted(
+                            board['pins'],
+                            key=lambda p: urlscan_activity_map.get(p['id'], min_date),
+                            reverse=True
+                        )
+                        for pin in sorted_pins:
                             status = "✅ Active" if pin['active'] else "❌ Inactive"
-                            st.markdown(f"- **`{pin['ioc_value']}`** ({pin['ioc_type']}) - {status}", unsafe_allow_html=False)
+
+                            # Visual indicator for recent urlscan activity
+                            recent_activity_indicator = ""
+                            if pin['id'] in urlscan_activity_map:
+                                activity_time = urlscan_activity_map[pin['id']].strftime('%Y-%m-%d %H:%M:%S')
+                                recent_activity_indicator = f" 📈 *(Recent urlscan activity: {activity_time})*"
+
+                            st.markdown(f"- **`{pin['ioc_value']}`** ({pin['ioc_type']}) - {status}{recent_activity_indicator}", unsafe_allow_html=False)
                     else:
                         st.write("No pins in this board.")
         
