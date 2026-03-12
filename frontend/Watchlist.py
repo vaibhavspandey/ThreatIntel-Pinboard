@@ -245,7 +245,23 @@ try:
                                 activity_time = urlscan_activity_map[pin['id']].strftime('%Y-%m-%d %H:%M:%S')
                                 recent_activity_indicator = f" 📈 *(Recent urlscan activity: {activity_time})*"
 
-                            st.markdown(f"- **`{pin['ioc_value']}`** ({pin['ioc_type']}) - {status}{recent_activity_indicator}", unsafe_allow_html=False)
+                            with st.expander(f"**`{pin['ioc_value']}`** ({pin['ioc_type']}) - {status}{recent_activity_indicator}"):
+                                baseline = fetch_pin_baseline(pin['id'])
+                                full_report = baseline.get("full_report_json", {})
+
+                                # Extract community votes
+                                mal_votes = 0
+                                harm_votes = 0
+                                try:
+                                    vt_data = full_report.get("virustotal", {}).get("data", {}).get("attributes", {})
+                                    votes = vt_data.get("total_votes", {})
+                                    mal_votes = votes.get("malicious", 0)
+                                    harm_votes = votes.get("harmless", 0)
+                                except Exception:
+                                    pass
+
+                                st.markdown(f"**Community Sentiment:** 🔴 {mal_votes} Malicious | 🟢 {harm_votes} Harmless")
+
                     else:
                         st.write("No pins in this board.")
         
