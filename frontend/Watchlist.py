@@ -24,6 +24,16 @@ st.markdown("""
 # API base URL
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 
+@st.cache_data(ttl=300)
+def fetch_pin_baseline(pin_id: int) -> dict:
+    try:
+        response = requests.get(f"{API_BASE_URL}/api/internal/baseline/{pin_id}", timeout=10)
+        if response.status_code == 200:
+            return response.json()
+    except requests.exceptions.RequestException:
+        pass
+    return {}
+
 st.title(">> TI Pinboard_")
 
 try:
@@ -199,7 +209,22 @@ try:
                     if board['pins']:
                         for pin in board['pins']:
                             status = "✅ Active" if pin['active'] else "❌ Inactive"
-                            st.markdown(f"- **`{pin['ioc_value']}`** ({pin['ioc_type']}) - {status}", unsafe_allow_html=False)
+                            with st.expander(f"**`{pin['ioc_value']}`** ({pin['ioc_type']}) - {status}"):
+                                baseline = fetch_pin_baseline(pin['id'])
+                                full_report = baseline.get("full_report_json", {})
+
+                                # Extract community votes
+                                mal_votes = 0
+                                harm_votes = 0
+                                try:
+                                    vt_data = full_report.get("virustotal", {}).get("data", {}).get("attributes", {})
+                                    votes = vt_data.get("total_votes", {})
+                                    mal_votes = votes.get("malicious", 0)
+                                    harm_votes = votes.get("harmless", 0)
+                                except Exception:
+                                    pass
+
+                                st.markdown(f"**Community Sentiment:** 🔴 {mal_votes} Malicious | 🟢 {harm_votes} Harmless")
                     else:
                         st.write("No pins in this board.")
         
