@@ -24,6 +24,16 @@ st.markdown("""
 # API base URL
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 
+@st.cache_data(ttl=300)
+def fetch_pin_baseline(pin_id: int) -> dict:
+    try:
+        response = requests.get(f"{API_BASE_URL}/api/internal/baseline/{pin_id}", timeout=10)
+        if response.status_code == 200:
+            return response.json()
+    except requests.exceptions.RequestException:
+        pass
+    return {}
+
 st.title(">> TI Pinboard_")
 
 try:
@@ -116,6 +126,18 @@ try:
         st.header("🚨 While you were away...")
         st.markdown("_Recent changes to your pinned items_")
         
+        # Display DOMAIN_WEAPONIZED critical alerts prominently
+        if domain_weaponized_alerts:
+            for alert in domain_weaponized_alerts:
+                pin = alert.get('pin', {})
+                delta = alert.get('delta_data', {})
+                board_name = board_name_map.get(pin.get('board_id'), 'Unknown Board')
+                scan_id = delta.get('scan_id', 'Unknown')
+
+                st.error(f"**🚨 CRITICAL THREAT: Domain Weaponized**\n\n"
+                         f"On pinboard **{board_name}**, the domain **`{pin.get('ioc_value')}`** verdict changed to malicious!\n\n"
+                         f"**Scan ID:** `{scan_id}`")
+
         left_col, right_col = st.columns([0.6, 0.4])
 
         with left_col:

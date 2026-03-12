@@ -78,6 +78,23 @@ def _compare_urlscan(old_report: Optional[Dict], new_report: Optional[Dict]) -> 
                 'old': len(old_results),
                 'new': len(new_results)
             })
+
+        # DOMAIN_WEAPONIZED logic
+        if new_results and old_results and isinstance(new_results, list) and isinstance(old_results, list):
+            new_first = new_results[0]
+            old_first = old_results[0]
+
+            if isinstance(new_first, dict) and isinstance(old_first, dict):
+                new_malicious = new_first.get('verdicts', {}).get('malicious')
+                old_malicious = old_first.get('verdicts', {}).get('malicious')
+
+                if new_malicious is True and old_malicious is False:
+                    deltas.append({
+                        'field': 'DOMAIN_WEAPONIZED',
+                        'message': 'URLScan verdict changed to malicious',
+                        'scan_id': new_first.get('_id')
+                    })
+
     except (KeyError, AttributeError, TypeError) as e:
         print(f"Error comparing urlscan.io data: {str(e)}", flush=True)
         
@@ -97,7 +114,15 @@ def _compare_neiki(old_report: Optional[Dict], new_report: Optional[Dict]) -> Li
         # Compare reputation
         old_rep = old_data.get('reputation')
         new_rep = new_data.get('reputation')
-        if old_rep != new_rep and new_rep:
+
+        if old_rep is not None and new_rep is not None:
+            if abs(new_rep - old_rep) >= 15:
+                deltas.append({
+                    'field': 'neiki_reputation_change',
+                    'old': old_rep,
+                    'new': new_rep
+                })
+        elif old_rep is None and new_rep is not None:
             deltas.append({
                 'field': 'neiki_reputation_change',
                 'old': old_rep,
@@ -154,7 +179,7 @@ def _compare_vt_ip(old_report: Optional[Dict], new_report: Optional[Dict]) -> Li
             old_malicious = old_stats.get('malicious', 0)
             new_malicious = new_stats.get('malicious', 0)
             
-            if new_malicious > old_malicious:
+            if (old_malicious == 0 and new_malicious > 0) or (new_malicious - old_malicious >= 5):
                 deltas.append({
                     'field': 'detection_ratio',
                     'old': old_malicious,
@@ -178,12 +203,16 @@ def _compare_vt_ip(old_report: Optional[Dict], new_report: Optional[Dict]) -> Li
             old_count = old_comm_files.get('data', [])
             new_count = new_comm_files.get('data', [])
             
-            if len(new_count) > len(old_count):
-                deltas.append({
-                    'field': 'new_communicating_files',
-                    'old': len(old_count),
-                    'new': len(new_count)
-                })
+            old_comm_ids = {item.get('id') for item in old_count if isinstance(item, dict) and item.get('id')}
+            new_comm_ids = {item.get('id') for item in new_count if isinstance(item, dict) and item.get('id')}
+
+            new_comm_items = new_comm_ids - old_comm_ids
+            if new_comm_items:
+                for item_id in new_comm_items:
+                    deltas.append({
+                        'field': 'new_communicating_files',
+                        'value': item_id
+                    })
             
             # Check for new downloaded files
             old_dl_files = old_data.get('data', {}).get('relationships', {}).get('downloaded_files', {})
@@ -192,12 +221,16 @@ def _compare_vt_ip(old_report: Optional[Dict], new_report: Optional[Dict]) -> Li
             old_dl_count = old_dl_files.get('data', [])
             new_dl_count = new_dl_files.get('data', [])
             
-            if len(new_dl_count) > len(old_dl_count):
-                deltas.append({
-                    'field': 'new_downloaded_files',
-                    'old': len(old_dl_count),
-                    'new': len(new_dl_count)
-                })
+            old_dl_ids = {item.get('id') for item in old_dl_count if isinstance(item, dict) and item.get('id')}
+            new_dl_ids = {item.get('id') for item in new_dl_count if isinstance(item, dict) and item.get('id')}
+
+            new_dl_items = new_dl_ids - old_dl_ids
+            if new_dl_items:
+                for item_id in new_dl_items:
+                    deltas.append({
+                        'field': 'new_downloaded_files',
+                        'value': item_id
+                    })
         except (KeyError, AttributeError, TypeError) as e:
             print(f"Error comparing VT IP data: {str(e)}", flush=True)
 
@@ -234,7 +267,7 @@ def _compare_vt_domain(old_report: Optional[Dict], new_report: Optional[Dict]) -
             old_malicious = old_stats.get('malicious', 0)
             new_malicious = new_stats.get('malicious', 0)
             
-            if new_malicious > old_malicious:
+            if (old_malicious == 0 and new_malicious > 0) or (new_malicious - old_malicious >= 5):
                 deltas.append({
                     'field': 'detection_ratio',
                     'old': old_malicious,
@@ -293,7 +326,7 @@ def _compare_vt_hash(old_report: Dict[str, Any], new_report: Dict[str, Any]) -> 
             old_malicious = old_stats.get('malicious', 0)
             new_malicious = new_stats.get('malicious', 0)
             
-            if new_malicious > old_malicious:
+            if (old_malicious == 0 and new_malicious > 0) or (new_malicious - old_malicious >= 5):
                 deltas.append({
                     'field': 'detection_ratio',
                     'old': old_malicious,
@@ -318,12 +351,16 @@ def _compare_vt_hash(old_report: Dict[str, Any], new_report: Dict[str, Any]) -> 
             old_contact_domains = old_contacts.get('data', [])
             new_contact_domains = new_contacts.get('data', [])
             
-            if len(new_contact_domains) > len(old_contact_domains):
-                deltas.append({
-                    'field': 'new_contacted_domains',
-                    'old': len(old_contact_domains),
-                    'new': len(new_contact_domains)
-                })
+            old_domain_ids = {item.get('id') for item in old_contact_domains if isinstance(item, dict) and item.get('id')}
+            new_domain_ids = {item.get('id') for item in new_contact_domains if isinstance(item, dict) and item.get('id')}
+
+            new_domain_items = new_domain_ids - old_domain_ids
+            if new_domain_items:
+                for item_id in new_domain_items:
+                    deltas.append({
+                        'field': 'new_contacted_domains',
+                        'value': item_id
+                    })
             
             # Check for new contacted IPs
             old_contact_ips = old_vt.get('data', {}).get('relationships', {}).get('contacted_ips', {})
@@ -332,12 +369,16 @@ def _compare_vt_hash(old_report: Dict[str, Any], new_report: Dict[str, Any]) -> 
             old_ips = old_contact_ips.get('data', [])
             new_ips = new_contact_ips.get('data', [])
             
-            if len(new_ips) > len(old_ips):
-                deltas.append({
-                    'field': 'new_contacted_ips',
-                    'old': len(old_ips),
-                    'new': len(new_ips)
-                })
+            old_ip_ids = {item.get('id') for item in old_ips if isinstance(item, dict) and item.get('id')}
+            new_ip_ids = {item.get('id') for item in new_ips if isinstance(item, dict) and item.get('id')}
+
+            new_ip_items = new_ip_ids - old_ip_ids
+            if new_ip_items:
+                for item_id in new_ip_items:
+                    deltas.append({
+                        'field': 'new_contacted_ips',
+                        'value': item_id
+                    })
         
         except (KeyError, AttributeError, TypeError) as e:
             print(f"Error comparing VT hash data: {str(e)}", flush=True)
