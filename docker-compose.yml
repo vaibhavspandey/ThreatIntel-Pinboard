@@ -1,19 +1,6 @@
 version: '3.8'
 
 services:
-  db:
-    image: postgres:13
-    container_name: ti_watchlist_db
-    environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=dbname
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - ti_watchlist_network
-    restart: unless-stopped
-
   backend:
     build: ./backend
     container_name: ti_watchlist_backend
@@ -23,14 +10,12 @@ services:
       - ./backend/data:/app/data
       - ./backend/alembic:/app/alembic
     environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/dbname
+      - DATABASE_URL=sqlite:////app/data/ti_watchlist.db
       - VIRUSTOTAL_API_KEY=${VIRUSTOTAL_API_KEY}
       - MALWAREBAZAAR_API_KEY=${MALWAREBAZAAR_API_KEY}
       - URLSCAN_API_KEY=${URLSCAN_API_KEY}
       - NEIKI_API_KEY=${NEIKI_API_KEY}
-    depends_on:
-      - db
-    command: sh -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"
+    command: sh -c "mkdir -p /app/data && alembic upgrade head || true && uvicorn main:app --host 0.0.0.0 --port 8000"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
