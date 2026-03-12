@@ -119,7 +119,8 @@ try:
 
     # Separate comment alerts from main alerts
     comment_alerts = [alert for alert in alerts if alert['delta_data'].get('field') == 'new_vt_comment']
-    main_alerts = [alert for alert in alerts if alert['delta_data'].get('field') not in ('new_vt_comment', 'new_urlscan_scan')]
+    domain_weaponized_alerts = [alert for alert in alerts if alert['delta_data'].get('field') == 'DOMAIN_WEAPONIZED']
+    main_alerts = [alert for alert in alerts if alert['delta_data'].get('field') not in ('new_vt_comment', 'DOMAIN_WEAPONIZED', 'new_urlscan_scan')]
     
     # Main content
     if view == "While you were away":
