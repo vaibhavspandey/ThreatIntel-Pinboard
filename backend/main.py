@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 import os
 import requests
 
-from database import get_db, init_db
+from database import get_db
 from models import (
     User, Board, Pin, Snapshot, Alert,
     BoardCreate, BoardResponse,
