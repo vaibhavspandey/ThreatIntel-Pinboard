@@ -78,6 +78,23 @@ def _compare_urlscan(old_report: Optional[Dict], new_report: Optional[Dict]) -> 
                 'old': len(old_results),
                 'new': len(new_results)
             })
+
+        # DOMAIN_WEAPONIZED logic
+        if new_results and old_results and isinstance(new_results, list) and isinstance(old_results, list):
+            new_first = new_results[0]
+            old_first = old_results[0]
+
+            if isinstance(new_first, dict) and isinstance(old_first, dict):
+                new_malicious = new_first.get('verdicts', {}).get('malicious')
+                old_malicious = old_first.get('verdicts', {}).get('malicious')
+
+                if new_malicious is True and old_malicious is False:
+                    deltas.append({
+                        'field': 'DOMAIN_WEAPONIZED',
+                        'message': 'URLScan verdict changed to malicious',
+                        'scan_id': new_first.get('_id')
+                    })
+
     except (KeyError, AttributeError, TypeError) as e:
         print(f"Error comparing urlscan.io data: {str(e)}", flush=True)
         
