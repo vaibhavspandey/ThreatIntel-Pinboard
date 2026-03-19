@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import os
+import re
 from datetime import datetime
 
 # Page config
@@ -24,12 +25,55 @@ st.markdown("""
 # API base URL
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 
+def extract_threat_actor(snapshot_json: dict, comments_text: str = "") -> str:
+    """
+    Extracts Threat Actor attribution from VirusTotal JSON and/or comment text
+    using regex and specific VT JSON paths.
+    """
+    pattern = r'(?i)(APT-?\d+|UNC\d+|FIN\d+|Lazarus|Cozy Bear|Agent\s?Tesla|Emotet|Cobalt\s?Strike|TrickBot)'
+
+    # Check VT JSON paths first
+    vt_data = snapshot_json.get("virustotal", {}).get("data", {})
+    if vt_data:
+        attributes = vt_data.get("attributes", {})
+
+        # 1. Check suggested threat label
+        threat_label = attributes.get("popular_threat_classification", {}).get("suggested_threat_label", "")
+        if threat_label:
+            match = re.search(pattern, threat_label)
+            if match:
+                return match.group(0)
+
+        # 2. Check crowdsourced YARA results
+        yara_results = attributes.get("crowdsourced_yara_results", [])
+        for yara in yara_results:
+            rule_name = yara.get("rule_name", "")
+            author = yara.get("author", "")
+            description = yara.get("description", "")
+
+            for text_to_check in [rule_name, author, description]:
+                if text_to_check:
+                    match = re.search(pattern, text_to_check)
+                    if match:
+                        return match.group(0)
+
+    # 3. Check the provided comments text
+    if comments_text:
+        match = re.search(pattern, comments_text)
+        if match:
+            return match.group(0)
+
+    return ""
+
+
 @st.cache_data(ttl=300)
-def fetch_pin_baseline(pin_id: int) -> dict:
+def fetch_pin_baseline(pin_id: int):
+    """Fetch the latest baseline snapshot for a specific pin, cached to prevent N+1 API calls."""
     try:
-        response = requests.get(f"{API_BASE_URL}/api/internal/baseline/{pin_id}", timeout=10)
-        if response.status_code == 200:
-            return response.json()
+        resp = requests.get(f"{API_BASE_URL}/api/internal/baseline/{pin_id}", timeout=10)
+        if resp.status_code == 200:
+            return resp.json().get("full_report_json", {})
+
     except requests.exceptions.RequestException:
         pass
     return {}
@@ -129,7 +173,6 @@ try:
                 st.error(f"**🚨 CRITICAL THREAT: Domain Weaponized**\n\n"
                          f"On pinboard **{board_name}**, the domain **`{pin.get('ioc_value')}`** verdict changed to malicious!\n\n"
                          f"**Scan ID:** `{scan_id}`")
-
         left_col, right_col = st.columns([0.6, 0.4])
 
         with left_col:
@@ -194,7 +237,15 @@ try:
                     pin = alert['pin']
                     value = alert['delta_data'].get('value', 'N/A')
                     board_name = board_name_map.get(pin.get('board_id'), 'Unknown Board')
-                    st.warning(f"**`{pin['ioc_value']}`** on **{board_name}**\n\n> {value}")
+
+                    # Extract TA attribution using the cached snapshot
+                    snapshot_json = fetch_pin_baseline(pin['id'])
+                    ta_attribution = extract_threat_actor(snapshot_json, value)
+
+                    if ta_attribution:
+                        st.warning(f"**`{pin['ioc_value']}`** on **{board_name}**\n\n**Possible Attribution ->** [{ta_attribution}]\n\n> {value}")
+                    else:
+                        st.warning(f"**`{pin['ioc_value']}`** on **{board_name}**\n\n> {value}")
 
     
     elif view == "Manage Pinboards":
@@ -224,7 +275,7 @@ try:
                             status = "✅ Active" if pin['active'] else "❌ Inactive"
                             with st.expander(f"**`{pin['ioc_value']}`** ({pin['ioc_type']}) - {status}"):
                                 baseline = fetch_pin_baseline(pin['id'])
-                                full_report = baseline.get("full_report_json", {})
+                                full_report = baseline if isinstance(baseline, dict) else {}
 
                                 # Extract community votes
                                 mal_votes = 0

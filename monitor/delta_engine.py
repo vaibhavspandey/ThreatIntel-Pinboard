@@ -79,6 +79,7 @@ def _compare_urlscan(old_report: Optional[Dict], new_report: Optional[Dict]) -> 
                 'new': len(new_results)
             })
 
+
         # DOMAIN_WEAPONIZED logic
         if new_results and old_results and isinstance(new_results, list) and isinstance(old_results, list):
             new_first = new_results[0]
@@ -94,7 +95,6 @@ def _compare_urlscan(old_report: Optional[Dict], new_report: Optional[Dict]) -> 
                         'message': 'URLScan verdict changed to malicious',
                         'scan_id': new_first.get('_id')
                     })
-
     except (KeyError, AttributeError, TypeError) as e:
         print(f"Error comparing urlscan.io data: {str(e)}", flush=True)
         
